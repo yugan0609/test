@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RedNote Vocabulary Map (English) — Relationship &amp; Attachment Talk</title>
+<style>
+  :root{
+    --bg: #FAF6F1;
+    --panel: #FFFFFF;
+    --ink: #241C1A;
+    --ink-soft: #6b5f5a;
+    --line: #E7DDD4;
+    --accent: #FF2C42; /* RedNote red, used sparingly */
+
+    --c0: #D6536D; /* Trust, Reassurance & Check-ins */
+    --c1: #C98A4B; /* Commitment & Practical Concerns */
+    --c2: #4C7A82; /* Relationship Dynamics & Norms */
+    --c3: #7A9D6F; /* Self-Care & Physical Wellbeing */
+    --c4: #8A6BB0; /* Anxious Attachment & Emotions */
+    --c5: #D9A441; /* Everyday Life & Gender Talk */
+    --c6: #4568B2; /* Boyfriend Moments & Protection */
+    --c7: #B04A6E; /* Female Empowerment & Growth */
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Helvetica Neue", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  #app { display: flex; height: 100vh; width: 100vw; }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar {
+    width: 300px;
+    min-width: 260px;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 24px 20px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-family: Georgia, "Songti SC", "Noto Serif SC", serif;
+    font-size: 22px;
+    line-height: 1.25;
+    margin: 0 0 8px 0;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 10px;
+  }
+  .stat .num { font-size: 20px; font-weight: 700; font-family: Georgia, serif; }
+  .stat .lbl { font-size: 10px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;}
+
+  .legend-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin: 4px 0 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .legend-title button {
+    font-size: 10px;
+    border: none;
+    background: none;
+    color: var(--accent);
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 0;
+  }
+
+  .cluster-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 7px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    user-select: none;
+  }
+  .cluster-item:hover { background: var(--bg); }
+  .cluster-item.dim { opacity: 0.35; }
+
+  .swatch {
+    width: 11px; height: 11px;
+    border-radius: 3px;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  .cluster-name { font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+  .cluster-count { font-size: 10.5px; color: var(--ink-soft); }
+
+  #footer-note {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  /* ---------- Canvas area ---------- */
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,44,66,0.04), transparent 45%),
+      var(--bg);
+  }
+
+  svg { width: 100%; height: 100%; display: block; cursor: grab; }
+  svg.dragging { cursor: grabbing; }
+
+  .node-label {
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+    paint-order: stroke;
+    stroke: var(--bg);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  .node-dot { cursor: pointer; }
+  .node-dot.faded { opacity: 0.12; }
+  .node-label.faded { opacity: 0.12; }
+
+  #tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 13px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    max-width: 220px;
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 14px));
+    transition: opacity 0.1s ease;
+    z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+  #tooltip .tt-word { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  #tooltip .tt-row { color: rgba(255,255,255,0.75); font-size: 11.5px; }
+  #tooltip .tt-swatch { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px;}
+
+  #toolbar {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    gap: 8px;
+  }
+  #toolbar button {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 12px;
+    padding: 7px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  #toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+
+  #hint {
+    position: absolute;
+    bottom: 16px;
+    left: 18px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 6px 10px;
+    border-radius: 7px;
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="eyebrow">RedNote (小红书) · 71 posts</div>
+    <h1>What the vocabulary reveals</h1>
+    <div class="subtitle">Every point is a word or phrase pulled from the post captions, titles and hashtags, translated from Chinese into English. Distance encodes how often words appear <em>together</em> in the same post; size encodes overall frequency. Hover to see the original Chinese term.</div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="num" id="stat-posts">71</div><div class="lbl">Posts</div></div>
+      <div class="stat"><div class="num" id="stat-terms">1,286</div><div class="lbl">Unique terms</div></div>
+      <div class="stat"><div class="num" id="stat-shown">140</div><div class="lbl">Plotted</div></div>
+    </div>
+
+    <div class="legend-title"><span>Clusters</span><button id="reset-clusters">show all</button></div>
+    <div id="legend"></div>
+
+    <div id="footer-note">
+      Click a cluster to isolate it, click again to restore. Scroll to zoom, drag to pan. Segmented with a custom PMI-based Chinese tokenizer, then machine-translated term by term (jieba was unavailable offline).
+    </div>
+  </div>
+
+  <div id="canvas-wrap">
+    <svg id="svg"><g id="viewport"></g></svg>
+    <div id="tooltip"></div>
+    <div id="toolbar">
+      <button id="zoom-in">+</button>
+      <button id="zoom-out">–</button>
+      <button id="zoom-reset">Reset view</button>
+    </div>
+    <div id="hint">Hover a word for frequency &amp; cluster · scroll to zoom · drag to pan</div>
+  </div>
+</div>
+
+<script>
+const RAW_DATA = [{"word": "love", "freq": 125, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": 4.577637672424316, "y": 5.690014362335205, "word_zh": "爱"}, {"word": "the other person", "freq": 100, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -8.076316833496094, "y": -5.864781856536865, "word_zh": "对方"}, {"word": "sense of security", "freq": 90, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -2.044606924057007, "y": 8.659878730773926, "word_zh": "安全感"}, {"word": "dating/romance", "freq": 79, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -0.614621639251709, "y": 4.509744644165039, "word_zh": "恋爱"}, {"word": "girls", "freq": 62, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": 9.226083755493164, "y": 5.554215431213379, "word_zh": "女生"}, {"word": "check-in/reporting", "freq": 60, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -1.262781023979187, "y": 7.706696510314941, "word_zh": "报备"}, {"word": "women", "freq": 50, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": 12.448244094848633, "y": 2.540766716003418, "word_zh": "女性"}, {"word": "emotions", "freq": 48, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": -2.2351789474487305, "y": 3.8858723640441895, "word_zh": "情绪"}, {"word": "life", "freq": 47, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": 3.4633684158325195, "y": 5.023530006408691, "word_zh": "生活"}, {"word": "share", "freq": 37, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": 2.0366170406341553, "y": 6.34580135345459, "word_zh": "分享"}, {"word": "life journey", "freq": 37, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": -3.20812726020813, "y": -13.49914264678955, "word_zh": "人生"}, {"word": "safety", "freq": 36, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 11.446944236755371, "y": 2.7756693363189697, "word_zh": "安全"}, {"word": "relationship", "freq": 34, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -5.834841251373291, "y": -11.109829902648926, "word_zh": "关系"}, {"word": "feelings", "freq": 33, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": -6.495177268981934, "y": -0.46427637338638306, "word_zh": "感情"}, {"word": "couple", "freq": 30, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 15.54129695892334, "y": 6.458260536193848, "word_zh": "情侣"}, {"word": "initiative", "freq": 30, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -2.7732489109039307, "y": 6.506636619567871, "word_zh": "主动"}, {"word": "daily life", "freq": 29, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": 1.0839272737503052, "y": 5.826235294342041, "word_zh": "日常"}, {"word": "communication", "freq": 28, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -8.537412643432617, "y": -4.823920726776123, "word_zh": "沟通"}, {"word": "men", "freq": 28, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 12.769821166992188, "y": -6.577362537384033, "word_zh": "男人"}, {"word": "ability", "freq": 28, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": 11.576658248901367, "y": -5.873580455780029, "word_zh": "能力"}, {"word": "phone", "freq": 27, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 11.015067100524902, "y": 11.946240425109863, "word_zh": "手机"}, {"word": "friend", "freq": 26, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": 4.082209587097168, "y": 7.32307243347168, "word_zh": "朋友"}, {"word": "they/ta (gender-neutral)", "freq": 22, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -17.845006942749023, "y": -7.085152626037598, "word_zh": "ta"}, {"word": "women's growth", "freq": 21, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 8.687753677368164, "y": -3.900409698486328, "word_zh": "女性成长"}, {"word": "romantic love", "freq": 21, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -2.0955989360809326, "y": -9.197565078735352, "word_zh": "爱情"}, {"word": "work", "freq": 20, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": 7.428932189941406, "y": 6.492973804473877, "word_zh": "工作"}, {"word": "boyfriend", "freq": 20, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 17.803037643432617, "y": 8.539433479309082, "word_zh": "男朋友"}, {"word": "resolve", "freq": 20, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 7.73252534866333, "y": -3.003392219543457, "word_zh": "解决"}, {"word": "discover", "freq": 20, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": 14.716476440429688, "y": -7.153748989105225, "word_zh": "发现"}, {"word": "happiness", "freq": 20, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 13.715195655822754, "y": -3.0033745765686035, "word_zh": "幸福"}, {"word": "body", "freq": 20, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 9.095829010009766, "y": 1.0379197597503662, "word_zh": "身体"}, {"word": "believe", "freq": 19, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 7.886637210845947, "y": -7.223942756652832, "word_zh": "相信"}, {"word": "take care of", "freq": 19, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 9.059340476989746, "y": 2.5287976264953613, "word_zh": "照顾"}, {"word": "emotion/affection", "freq": 19, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -13.96908187866211, "y": -8.179451942443848, "word_zh": "情感"}, {"word": "getting along", "freq": 19, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -9.72386360168457, "y": -5.845015525817871, "word_zh": "相处"}, {"word": "independence", "freq": 19, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 9.125277519226074, "y": -6.782530307769775, "word_zh": "独立"}, {"word": "trust", "freq": 18, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -4.506107330322266, "y": 11.565919876098633, "word_zh": "信任"}, {"word": "give/sacrifice", "freq": 18, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -5.581920623779297, "y": -12.154984474182129, "word_zh": "付出"}, {"word": "being loved", "freq": 18, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 12.340595245361328, "y": -12.860400199890137, "word_zh": "被爱"}, {"word": "habit", "freq": 18, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": -6.74567985534668, "y": -5.039073944091797, "word_zh": "习惯"}, {"word": "authentic", "freq": 18, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": 5.614132404327393, "y": 8.495393753051758, "word_zh": "真实"}, {"word": "future", "freq": 17, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": -8.025497436523438, "y": 10.427095413208008, "word_zh": "未来"}, {"word": "self-love", "freq": 17, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": 12.18758487701416, "y": -4.249841213226318, "word_zh": "爱自己"}, {"word": "boys", "freq": 17, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": 8.328330039978027, "y": 9.131526947021484, "word_zh": "男生"}, {"word": "demand/require", "freq": 16, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": -6.153181552886963, "y": 1.6723004579544067, "word_zh": "要求"}, {"word": "understanding", "freq": 16, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -0.06839502602815628, "y": 11.547802925109863, "word_zh": "理解"}, {"word": "anxiety", "freq": 16, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 2.0052764415740967, "y": -4.465498447418213, "word_zh": "焦虑"}, {"word": "moment", "freq": 16, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 20.232635498046875, "y": 7.702881813049316, "word_zh": "瞬间"}, {"word": "problem", "freq": 16, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 6.786179542541504, "y": -0.862674355506897, "word_zh": "问题"}, {"word": "accept", "freq": 16, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -16.108997344970703, "y": -7.504992961883545, "word_zh": "接受"}, {"word": "strength", "freq": 16, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 14.115545272827148, "y": 1.4966397285461426, "word_zh": "力量"}, {"word": "boyfriend", "freq": 15, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 15.734694480895996, "y": 5.874296188354492, "word_zh": "男友"}, {"word": "needs", "freq": 15, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": -5.050165176391602, "y": -5.033717155456543, "word_zh": "需求"}, {"word": "inner thoughts", "freq": 15, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": -7.428543567657471, "y": 5.79848575592041, "word_zh": "心里"}, {"word": "willing", "freq": 15, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": -5.051815986633301, "y": 1.1045798063278198, "word_zh": "愿意"}, {"word": "growth", "freq": 15, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": -3.478736639022827, "y": -14.174246788024902, "word_zh": "成长"}, {"word": "love me", "freq": 14, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 7.034914016723633, "y": -13.364736557006836, "word_zh": "爱我"}, {"word": "argue/fight", "freq": 14, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": -7.660195827484131, "y": 4.91586446762085, "word_zh": "吵架"}, {"word": "small things", "freq": 14, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": -3.761425256729126, "y": 4.331042289733887, "word_zh": "小事"}, {"word": "girls", "freq": 14, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 11.469554901123047, "y": 6.0735955238342285, "word_zh": "女孩子"}, {"word": "happy", "freq": 14, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": 5.481637954711914, "y": 2.316502809524536, "word_zh": "开心"}, {"word": "attitude", "freq": 14, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -15.265788078308105, "y": -8.563516616821289, "word_zh": "态度"}, {"word": "reject", "freq": 14, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -11.157023429870605, "y": -7.759524345397949, "word_zh": "拒绝"}, {"word": "avoid", "freq": 14, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -15.07186222076416, "y": -6.398436546325684, "word_zh": "避免"}, {"word": "chat", "freq": 13, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": 6.504881381988525, "y": 6.241437911987305, "word_zh": "聊天"}, {"word": "opposite sex", "freq": 13, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -11.855752944946289, "y": -15.092741966247559, "word_zh": "异性"}, {"word": "intimate relationship", "freq": 13, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": -5.526879787445068, "y": -3.1469976902008057, "word_zh": "亲密关系"}, {"word": "express", "freq": 13, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 4.997897624969482, "y": -7.179567337036133, "word_zh": "表达"}, {"word": "important", "freq": 13, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": -0.019000893458724022, "y": -2.1232869625091553, "word_zh": "重要"}, {"word": "itinerary/whereabouts", "freq": 13, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -5.405904293060303, "y": 8.764065742492676, "word_zh": "行程"}, {"word": "gentle", "freq": 13, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -3.8524606227874756, "y": 5.608047008514404, "word_zh": "温柔"}, {"word": "views on love", "freq": 12, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -8.569467544555664, "y": -9.110523223876953, "word_zh": "爱情观"}, {"word": "love you", "freq": 12, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 10.76937198638916, "y": -7.617030143737793, "word_zh": "爱你"}, {"word": "protect", "freq": 12, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 14.294894218444824, "y": 2.6310505867004395, "word_zh": "保护"}, {"word": "unease", "freq": 12, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": -3.5480268001556396, "y": -0.24678266048431396, "word_zh": "不安"}, {"word": "hobby", "freq": 12, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -10.054712295532227, "y": -11.829200744628906, "word_zh": "爱好"}, {"word": "urge to share", "freq": 11, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": 2.5347847938537598, "y": 7.943607807159424, "word_zh": "分享欲"}, {"word": "not enough", "freq": 11, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 11.848593711853027, "y": -12.24765396118164, "word_zh": "不够"}, {"word": "companionship", "freq": 11, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -2.983886957168579, "y": 1.2639565467834473, "word_zh": "陪伴"}, {"word": "must-read for girls", "freq": 11, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": 8.792154312133789, "y": 7.945109844207764, "word_zh": "女生必看"}, {"word": "action", "freq": 11, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 2.072281837463379, "y": 0.48724365234375, "word_zh": "行动"}, {"word": "self-depletion", "freq": 11, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 4.832219123840332, "y": -9.42989444732666, "word_zh": "内耗"}, {"word": "socializing", "freq": 11, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -14.287921905517578, "y": -10.448484420776367, "word_zh": "社交"}, {"word": "marriage", "freq": 11, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -0.5070658326148987, "y": -9.896003723144531, "word_zh": "结婚"}, {"word": "details", "freq": 11, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -3.8899800777435303, "y": 7.3502984046936035, "word_zh": "细节"}, {"word": "clear-headed", "freq": 11, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": 12.077378273010254, "y": -3.256734848022461, "word_zh": "清醒"}, {"word": "being in a relationship", "freq": 11, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -10.334471702575684, "y": -14.658650398254395, "word_zh": "谈恋爱"}, {"word": "relationship values", "freq": 10, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -9.685662269592285, "y": -14.135645866394043, "word_zh": "恋爱观"}, {"word": "joy", "freq": 10, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 6.528895854949951, "y": -13.336064338684082, "word_zh": "快乐"}, {"word": "healthy", "freq": 10, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": -8.052363395690918, "y": -7.985681533813477, "word_zh": "健康的"}, {"word": "planning", "freq": 10, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": -9.08741569519043, "y": 10.547911643981934, "word_zh": "规划"}, {"word": "bottom line", "freq": 10, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -13.652504920959473, "y": -9.604066848754883, "word_zh": "底线"}, {"word": "psychology", "freq": 10, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 15.761747360229492, "y": -10.52061939239502, "word_zh": "心理学"}, {"word": "individual", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -12.788405418395996, "y": -13.517833709716797, "word_zh": "个人"}, {"word": "very important", "freq": 9, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": -3.041870355606079, "y": 10.674474716186523, "word_zh": "很重要"}, {"word": "quarrel", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -8.096796035766602, "y": -2.954655885696411, "word_zh": "争吵"}, {"word": "money", "freq": 9, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 9.251459121704102, "y": -9.0154447555542, "word_zh": "钱"}, {"word": "don't dare", "freq": 9, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 6.2894415855407715, "y": -7.5539469718933105, "word_zh": "不敢"}, {"word": "drain/exhaust", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -6.715885162353516, "y": -12.572662353515625, "word_zh": "消耗"}, {"word": "dating guide", "freq": 9, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 6.277078628540039, "y": 15.397786140441895, "word_zh": "恋爱指南"}, {"word": "message", "freq": 9, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -5.822604179382324, "y": 9.818397521972656, "word_zh": "消息"}, {"word": "girlfriend", "freq": 9, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": -3.977158784866333, "y": 14.179221153259277, "word_zh": "女朋友"}, {"word": "sensitive", "freq": 9, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 0.4720010459423065, "y": -2.933746099472046, "word_zh": "敏感"}, {"word": "like", "freq": 9, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": 6.246771335601807, "y": 4.090689659118652, "word_zh": "喜欢"}, {"word": "movie", "freq": 9, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 0.6633613109588623, "y": -10.727402687072754, "word_zh": "电影"}, {"word": "respect", "freq": 9, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -6.493246555328369, "y": 14.425016403198242, "word_zh": "尊重"}, {"word": "boundaries", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -15.630632400512695, "y": -11.84753704071045, "word_zh": "边界"}, {"word": "ambiguous romance", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -13.678787231445312, "y": -11.187736511230469, "word_zh": "暧昧"}, {"word": "stretching", "freq": 9, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 9.742644309997559, "y": 0.022207288071513176, "word_zh": "拉伸"}, {"word": "muscle", "freq": 9, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 10.323330879211426, "y": 3.8261985778808594, "word_zh": "肌肉"}, {"word": "girl", "freq": 9, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -5.155319690704346, "y": 14.168889045715332, "word_zh": "女孩"}, {"word": "dating tips", "freq": 9, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 15.791584014892578, "y": 1.652117371559143, "word_zh": "恋爱技巧"}, {"word": "value", "freq": 9, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": 14.458789825439453, "y": -3.8125221729278564, "word_zh": "价值"}, {"word": "tips", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -4.280331611633301, "y": -9.592446327209473, "word_zh": "tips"}, {"word": "often", "freq": 9, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": 5.98269510269165, "y": 11.412210464477539, "word_zh": "经常"}, {"word": "pace", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -11.648746490478516, "y": -11.319831848144531, "word_zh": "节奏"}, {"word": "standard", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -4.457032680511475, "y": -16.36894989013672, "word_zh": "标准"}, {"word": "life experience", "freq": 9, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -4.643154621124268, "y": -15.022939682006836, "word_zh": "人生经验"}, {"word": "Xixi (name)", "freq": 9, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 17.00494956970215, "y": 4.622273921966553, "word_zh": "西西"}, {"word": "effort", "freq": 8, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": 1.1410548686981201, "y": 12.02336597442627, "word_zh": "努力"}, {"word": "temper", "freq": 8, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -9.693161964416504, "y": 4.71096658706665, "word_zh": "脾气"}, {"word": "promise", "freq": 8, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -7.798061370849609, "y": 15.435194969177246, "word_zh": "承诺"}, {"word": "favoritism", "freq": 8, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -10.747407913208008, "y": 13.192575454711914, "word_zh": "偏爱"}, {"word": "method", "freq": 8, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 11.894392967224121, "y": 12.77429485321045, "word_zh": "方法"}, {"word": "infatuated", "freq": 8, "cluster": 6, "cluster_name": "Boyfriend Moments & Protection", "x": 19.458984375, "y": 8.278375625610352, "word_zh": "上头"}, {"word": "mindset", "freq": 8, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 12.537064552307129, "y": 13.211258888244629, "word_zh": "心态"}, {"word": "hurt", "freq": 8, "cluster": 1, "cluster_name": "Commitment & Practical Concerns", "x": 10.707213401794434, "y": -9.270187377929688, "word_zh": "伤害"}, {"word": "affirmation", "freq": 8, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": 6.402001857757568, "y": 11.957945823669434, "word_zh": "肯定"}, {"word": "self-growth", "freq": 8, "cluster": 7, "cluster_name": "Female Empowerment & Growth", "x": 15.158270835876465, "y": -7.9682207107543945, "word_zh": "自我成长"}, {"word": "anger", "freq": 8, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": -10.113160133361816, "y": 8.441499710083008, "word_zh": "生气"}, {"word": "grounded/secure", "freq": 8, "cluster": 3, "cluster_name": "Self-Care & Physical Wellbeing", "x": 5.535759925842285, "y": 1.7000362873077393, "word_zh": "踏实"}, {"word": "photo", "freq": 8, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": 8.659279823303223, "y": 4.152333736419678, "word_zh": "照片"}, {"word": "stability", "freq": 8, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -6.9665069580078125, "y": 15.794867515563965, "word_zh": "稳定"}, {"word": "clear", "freq": 8, "cluster": 5, "cluster_name": "Everyday Life & Gender Talk", "x": -1.824563980102539, "y": 14.201186180114746, "word_zh": "清楚"}, {"word": "excessive", "freq": 8, "cluster": 2, "cluster_name": "Relationship Dynamics & Norms", "x": -3.186161518096924, "y": -6.733234882354736, "word_zh": "过度"}, {"word": "partner", "freq": 8, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": -2.730569839477539, "y": -4.566810131072998, "word_zh": "伴侣"}, {"word": "affection", "freq": 8, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": 0.36724182963371277, "y": 1.8291398286819458, "word_zh": "爱意"}, {"word": "plan", "freq": 8, "cluster": 0, "cluster_name": "Trust, Reassurance & Check-ins", "x": -9.74677562713623, "y": 13.512818336486816, "word_zh": "计划"}, {"word": "treat as", "freq": 8, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": -10.349198341369629, "y": -1.73971426486969, "word_zh": "当成"}, {"word": "fear", "freq": 8, "cluster": 4, "cluster_name": "Anxious Attachment & Emotions", "x": 4.211521148681641, "y": -1.2820934057235718, "word_zh": "恐惧"}];
+
+const CLUSTER_META = [
+  {id:0, name:"Trust, Reassurance & Check-ins", color:"var(--c0)", hex:"#D6536D"},
+  {id:1, name:"Commitment & Practical Concerns", color:"var(--c1)", hex:"#C98A4B"},
+  {id:2, name:"Relationship Dynamics & Norms", color:"var(--c2)", hex:"#4C7A82"},
+  {id:3, name:"Self-Care & Physical Wellbeing", color:"var(--c3)", hex:"#7A9D6F"},
+  {id:4, name:"Anxious Attachment & Emotions", color:"var(--c4)", hex:"#8A6BB0"},
+  {id:5, name:"Everyday Life & Gender Talk", color:"var(--c5)", hex:"#D9A441"},
+  {id:6, name:"Boyfriend Moments & Protection", color:"var(--c6)", hex:"#4568B2"},
+  {id:7, name:"Female Empowerment & Growth", color:"var(--c7)", hex:"#B04A6E"},
+];
+const colorFor = c => CLUSTER_META[c].hex;
+
+const svg = document.getElementById('svg');
+const viewport = document.getElementById('viewport');
+const tooltip = document.getElementById('tooltip');
+const NS = 'http://www.w3.org/2000/svg';
+
+// ---- scales ----
+const xs = RAW_DATA.map(d=>d.x), ys = RAW_DATA.map(d=>d.y);
+const xMin = Math.min(...xs), xMax = Math.max(...xs);
+const yMin = Math.min(...ys), yMax = Math.max(...ys);
+const freqs = RAW_DATA.map(d=>d.freq);
+const fMin = Math.min(...freqs), fMax = Math.max(...freqs);
+
+const W = 1600, H = 1100, PAD = 90;
+function sx(x){ return PAD + (x - xMin) / (xMax - xMin) * (W - 2*PAD); }
+function sy(y){ return PAD + (y - yMin) / (yMax - yMin) * (H - 2*PAD); }
+function rFor(freq){
+  const t = (Math.sqrt(freq) - Math.sqrt(fMin)) / (Math.sqrt(fMax) - Math.sqrt(fMin));
+  return 6 + t * 30;
+}
+function fontFor(freq){
+  const t = (Math.sqrt(freq) - Math.sqrt(fMin)) / (Math.sqrt(fMax) - Math.sqrt(fMin));
+  return 10 + t * 15;
+}
+
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+// simple radial jitter-free layout already computed (t-SNE); just draw
+let activeCluster = null;
+
+const nodes = [];
+RAW_DATA.forEach(d => {
+  const g = document.createElementNS(NS, 'g');
+  const r = rFor(d.freq);
+
+  const circle = document.createElementNS(NS, 'circle');
+  circle.setAttribute('cx', sx(d.x));
+  circle.setAttribute('cy', sy(d.y));
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', colorFor(d.cluster));
+  circle.setAttribute('fill-opacity', 0.85);
+  circle.setAttribute('stroke', '#fff');
+  circle.setAttribute('stroke-width', 1.2);
+  circle.classList.add('node-dot');
+
+  const label = document.createElementNS(NS, 'text');
+  label.setAttribute('x', sx(d.x));
+  label.setAttribute('y', sy(d.y) - r - 6);
+  label.setAttribute('font-size', fontFor(d.freq));
+  label.setAttribute('fill', '#241C1A');
+  label.textContent = d.word;
+  label.classList.add('node-label');
+
+  g.appendChild(circle);
+  g.appendChild(label);
+  viewport.appendChild(g);
+
+  function showTip(evt){
+    const rect = svg.getBoundingClientRect();
+    const meta = CLUSTER_META[d.cluster];
+    tooltip.innerHTML = `<div class="tt-word">${d.word}</div>
+      <div class="tt-row" style="opacity:0.6; font-style:italic;">${d.word_zh}</div>
+      <div class="tt-row">frequency: <strong>${d.freq}</strong></div>
+      <div class="tt-row"><span class="tt-swatch" style="background:${meta.hex}"></span>${meta.name}</div>`;
+    tooltip.style.opacity = 1;
+    positionTip(evt);
+  }
+  function positionTip(evt){
+    const rect = svg.getBoundingClientRect();
+    tooltip.style.left = (evt.clientX - rect.left) + 'px';
+    tooltip.style.top = (evt.clientY - rect.top) + 'px';
+  }
+  function hideTip(){ tooltip.style.opacity = 0; }
+
+  circle.addEventListener('mouseenter', showTip);
+  circle.addEventListener('mousemove', positionTip);
+  circle.addEventListener('mouseleave', hideTip);
+  label.addEventListener('mouseenter', showTip);
+  label.addEventListener('mousemove', positionTip);
+  label.addEventListener('mouseleave', hideTip);
+
+  nodes.push({d, circle, label});
+});
+
+function applyFilter(){
+  nodes.forEach(({d, circle, label}) => {
+    const faded = activeCluster !== null && d.cluster !== activeCluster;
+    circle.classList.toggle('faded', faded);
+    label.classList.toggle('faded', faded);
+  });
+  document.querySelectorAll('.cluster-item').forEach(el=>{
+    const cid = parseInt(el.dataset.cluster);
+    el.classList.toggle('dim', activeCluster !== null && cid !== activeCluster);
+  });
+}
+
+// ---- legend ----
+const legend = document.getElementById('legend');
+CLUSTER_META.forEach(meta => {
+  const count = RAW_DATA.filter(d=>d.cluster===meta.id).length;
+  const item = document.createElement('div');
+  item.className = 'cluster-item';
+  item.dataset.cluster = meta.id;
+  item.innerHTML = `<div class="swatch" style="background:${meta.hex}"></div>
+    <div><div class="cluster-name">${meta.name}</div><div class="cluster-count">${count} words</div></div>`;
+  item.addEventListener('click', () => {
+    activeCluster = (activeCluster === meta.id) ? null : meta.id;
+    applyFilter();
+  });
+  legend.appendChild(item);
+});
+document.getElementById('reset-clusters').addEventListener('click', () => {
+  activeCluster = null; applyFilter();
+});
+
+document.getElementById('stat-shown').textContent = RAW_DATA.length;
+
+// ---- zoom & pan ----
+let scale = 1, tx = 0, ty = 0;
+function applyTransform(){
+  viewport.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`);
+}
+svg.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = svg.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) / rect.width * W;
+  const my = (e.clientY - rect.top) / rect.height * H;
+  const delta = e.deltaY < 0 ? 1.12 : 0.89;
+  const newScale = Math.min(6, Math.max(0.5, scale * delta));
+  tx = mx - (mx - tx) * (newScale / scale);
+  ty = my - (my - ty) * (newScale / scale);
+  scale = newScale;
+  applyTransform();
+}, { passive: false });
+
+let dragging = false, lastX = 0, lastY = 0;
+svg.addEventListener('mousedown', (e) => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+  svg.classList.add('dragging');
+});
+window.addEventListener('mousemove', (e) => {
+  if(!dragging) return;
+  const rect = svg.getBoundingClientRect();
+  const dx = (e.clientX - lastX) / rect.width * W;
+  const dy = (e.clientY - lastY) / rect.height * H;
+  tx += dx; ty += dy;
+  lastX = e.clientX; lastY = e.clientY;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => { dragging = false; svg.classList.remove('dragging'); });
+
+document.getElementById('zoom-in').addEventListener('click', () => {
+  scale = Math.min(6, scale * 1.25); applyTransform();
+});
+document.getElementById('zoom-out').addEventListener('click', () => {
+  scale = Math.max(0.5, scale / 1.25); applyTransform();
+});
+document.getElementById('zoom-reset').addEventListener('click', () => {
+  scale = 1; tx = 0; ty = 0; applyTransform();
+});
+
+applyTransform();
+</script>
+</body>
+</html>
